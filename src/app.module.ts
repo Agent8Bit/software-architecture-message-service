@@ -4,6 +4,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import { ChatsModule } from './chats/chats.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { ChatsModule } from './chats/chats.module';
         autoLoadEntities: true,
       }),
     }),
+    AuthModule,
     ChatsModule,
   ],
   controllers: [AppController],
