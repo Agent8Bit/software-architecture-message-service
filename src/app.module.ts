@@ -20,6 +20,10 @@ import { ChatsModule } from './chats/chats.module';
         user: config.get('DB_USER'),
         password: config.get('DB_PASSWORD'),
         autoLoadEntities: true,
+        migrations: {
+          path: 'dist/migrations',
+          pathTs: 'src/migrations',
+        },
       }),
     }),
     AuthModule,

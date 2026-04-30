@@ -1,4 +1,4 @@
-export { ChatListItemDto, LastMessageDto } from './chat-list-item.dto';
+export { ChatListItemDto, ChatMemberDto, LastMessageDto } from './chat-list-item.dto';
 export { MessageDto, PaginatedMessagesDto } from './message.dto';
 export { GetMessagesQueryDto } from './get-messages-query.dto';
 export { CreateChatDto } from './create-chat.dto';

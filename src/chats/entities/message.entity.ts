@@ -20,7 +20,7 @@ export class Message {
 
   @Property()
   @Index()
-  senderId!: string;
+  senderId!: number;
 
   @Property({ default: MessageType.Text })
   type: MessageType & Opt = MessageType.Text;

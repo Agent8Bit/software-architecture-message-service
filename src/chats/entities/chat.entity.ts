@@ -17,9 +17,6 @@ export class Chat {
   @Property({ nullable: true })
   name?: string;
 
-  @Property({ nullable: true })
-  imgSrc?: string;
-
   @OneToMany(() => ChatMember, (member: ChatMember) => member.chat, { lazy: true })
   members = new Collection<ChatMember>(this);
 

@@ -19,7 +19,7 @@ export class ChatMember {
   chat!: Chat;
 
   @Property()
-  userId!: string;
+  userId!: number;
 
   @Property({ default: ChatMemberRole.Member })
   role: ChatMemberRole & Opt = ChatMemberRole.Member;

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateRequestContext, EntityManager, MikroORM } from '@mikro-orm/core';
+import { UsersApiService } from '../users-api/users-api.service';
 import { Chat } from './entities/chat.entity';
 import { ChatMember } from './entities/chat-member.entity';
 import { Message } from './entities/message.entity';
@@ -12,6 +13,7 @@ import { ChatMemberRole, MessageType } from './enums';
 import {
   AddMemberDto,
   ChatListItemDto,
+  ChatMemberDto,
   CreateChatDto,
   CreateMessageDto,
   GetMessagesQueryDto,
@@ -25,10 +27,11 @@ export class ChatsService {
   constructor(
     private readonly orm: MikroORM,
     private readonly em: EntityManager,
+    private readonly usersApi: UsersApiService,
   ) {}
 
   @CreateRequestContext()
-  async getChats(userId: string): Promise<ChatListItemDto[]> {
+  async getChats(userId: number): Promise<ChatListItemDto[]> {
     const memberships = await this.em.find(
       ChatMember,
       { userId },
@@ -53,12 +56,17 @@ export class ChatsService {
             : {}),
         });
 
-        const memberCount = await this.em.count(ChatMember, { chat });
+        const allMembers = await this.em.find(ChatMember, { chat });
+        const users = await this.usersApi.getUsers(allMembers.map((m) => m.userId));
+        const members: ChatMemberDto[] = allMembers.map((m) => {
+          const user = users.find((u) => u.id === m.userId);
+          // TODO: populate imgSrc once profile picture is implemented in the Users API
+          return { userId: m.userId, username: user?.username ?? '', imgSrc: '' };
+        });
 
         return {
           id: chat.id,
           name: chat.name,
-          imgSrc: chat.imgSrc,
           lastMessage: lastMessage
             ? ({
                 id: lastMessage.id,
@@ -69,7 +77,7 @@ export class ChatsService {
               } satisfies LastMessageDto)
             : undefined,
           unreadCount,
-          memberCount,
+          members,
         } satisfies ChatListItemDto;
       }),
     );
@@ -78,7 +86,7 @@ export class ChatsService {
   @CreateRequestContext()
   async getMessages(
     chatId: string,
-    userId: string,
+    userId: number,
     query: GetMessagesQueryDto,
   ): Promise<PaginatedMessagesDto> {
     const membership = await this.em.findOne(ChatMember, {
@@ -132,12 +140,13 @@ export class ChatsService {
 
   @CreateRequestContext()
   async createChat(
-    userId: string,
+    userId: number,
     dto: CreateChatDto,
   ): Promise<ChatListItemDto> {
+    await this.usersApi.assertUsersExist(dto.memberIds);
+
     const chat = this.em.create(Chat, {
       name: dto.name,
-      imgSrc: dto.imgSrc,
     });
 
     const creator = this.em.create(ChatMember, {
@@ -146,31 +155,41 @@ export class ChatsService {
       role: ChatMemberRole.Admin,
     });
 
-    const otherMembers = dto.memberIds.map((memberId) =>
-      this.em.create(ChatMember, {
-        chat,
-        userId: memberId,
-        role: ChatMemberRole.Member,
-      }),
-    );
+    const otherMembers = dto.memberIds
+      .filter((memberId) => memberId !== userId)
+      .map((memberId) =>
+        this.em.create(ChatMember, {
+          chat,
+          userId: memberId,
+          role: ChatMemberRole.Member,
+        }),
+      );
 
     this.em.persist([chat, creator, ...otherMembers]);
     await this.em.flush();
 
+    const allMemberIds = [userId, ...otherMembers.map((m) => m.userId)];
+    const users = await this.usersApi.getUsers(allMemberIds);
+    // TODO: populate imgSrc once profile picture is implemented in the Users API
+    const members: ChatMemberDto[] = allMemberIds.map((id) => ({
+      userId: id,
+      username: users.find((u) => u.id === id)?.username ?? '',
+      imgSrc: '',
+    }));
+
     return {
       id: chat.id,
       name: dto.name,
-      imgSrc: dto.imgSrc,
       lastMessage: undefined,
       unreadCount: 0,
-      memberCount: otherMembers.length + 1,
+      members,
     } satisfies ChatListItemDto;
   }
 
   @CreateRequestContext()
   async sendMessage(
     chatId: string,
-    userId: string,
+    userId: number,
     dto: CreateMessageDto,
   ): Promise<MessageDto> {
     const membership = await this.em.findOne(ChatMember, {
@@ -206,7 +225,7 @@ export class ChatsService {
   @CreateRequestContext()
   async addMember(
     chatId: string,
-    requestingUserId: string,
+    requestingUserId: number,
     dto: AddMemberDto,
   ): Promise<void> {
     const requester = await this.em.findOne(ChatMember, {

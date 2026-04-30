@@ -5,6 +5,5 @@ export enum ChatMemberRole {
 
 export enum MessageType {
   Text = 'text',
-  Image = 'image',
   System = 'system',
 }
