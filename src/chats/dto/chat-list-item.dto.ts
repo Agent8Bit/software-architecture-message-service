@@ -8,8 +8,7 @@ export class ChatMemberDto {
   @ApiProperty({ example: 'john_doe', description: 'Username of the user.' })
   username!: string;
 
-  // TODO: populate from Users API once profile picture is implemented
-  @ApiProperty({ example: '', description: 'Profile picture URL. Currently not provided by the Users API.' })
+  @ApiProperty({ example: 'https://example.com/avatar.png', description: 'Profile picture URL of the user.' })
   imgSrc!: string;
 }
 

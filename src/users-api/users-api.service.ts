@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 interface UserPublicDto {
   id: number;
   username: string;
+  profilePicUrl: string;
 }
 
 @Injectable()

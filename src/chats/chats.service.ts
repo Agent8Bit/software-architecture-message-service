@@ -60,8 +60,7 @@ export class ChatsService {
         const users = await this.usersApi.getUsers(allMembers.map((m) => m.userId));
         const members: ChatMemberDto[] = allMembers.map((m) => {
           const user = users.find((u) => u.id === m.userId);
-          // TODO: populate imgSrc once profile picture is implemented in the Users API
-          return { userId: m.userId, username: user?.username ?? '', imgSrc: '' };
+          return { userId: m.userId, username: user?.username ?? '', imgSrc: user?.profilePicUrl ?? '' };
         });
 
         return {
@@ -170,12 +169,10 @@ export class ChatsService {
 
     const allMemberIds = [userId, ...otherMembers.map((m) => m.userId)];
     const users = await this.usersApi.getUsers(allMemberIds);
-    // TODO: populate imgSrc once profile picture is implemented in the Users API
-    const members: ChatMemberDto[] = allMemberIds.map((id) => ({
-      userId: id,
-      username: users.find((u) => u.id === id)?.username ?? '',
-      imgSrc: '',
-    }));
+    const members: ChatMemberDto[] = allMemberIds.map((id) => {
+      const user = users.find((u) => u.id === id);
+      return { userId: id, username: user?.username ?? '', imgSrc: user?.profilePicUrl ?? '' };
+    });
 
     return {
       id: chat.id,
